@@ -429,10 +429,10 @@
     items.forEach((item, i) => {
       const a = document.createElement("a");
       a.className = "qbtn" + (i === 0 ? " primary" : "");
-      a.href = item.url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.setAttribute("download", "");
+      const ext = (item.ext || "MP4").toLowerCase();
+      const quality = (item.quality || "video").replace(/[^a-zA-Z0-9_-]/g, "");
+      const filename = `twitter-${quality || "video"}.${ext}`;
+      a.href = `/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(filename)}`;
       a.textContent = `${item.quality || "Download"} ${item.ext ? "• " + item.ext : ""}`;
       qualities.appendChild(a);
     });
