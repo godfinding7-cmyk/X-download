@@ -1,431 +1,629 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>X Video Downloader</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="description" content="TweetSave helps users save videos and GIFs from public X/Twitter posts they own or have permission to download. Learn how it works, supported devices, privacy, copyright rules and troubleshooting." />
+  <meta name="keywords" content="twitter video downloader, x video downloader, twitter gif downloader, download twitter video, download x video, twitter mp4 downloader" />
+  <title>TweetSave — Twitter / X Video & GIF Downloader</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    :root{
+      --bg:#fafafa;
+      --card:#ffffff;
+      --text:#0f0f10;
+      --muted:#737373;
+      --border:#dbdbdb;
+      --soft:#f2f2f2;
+      --accent:#0095f6;
+      --accent2:#1877f2;
+      --danger:#ed4956;
+      --shadow:0 8px 30px rgba(0,0,0,.07);
+      --radius:16px;
     }
 
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      color: #111;
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 15% 0%,rgba(0,149,246,.09),transparent 26rem),
+        radial-gradient(circle at 85% 8%,rgba(255,48,64,.07),transparent 24rem),
+        var(--bg);
+    }
+    a{color:inherit;text-decoration:none}
+    button,input{font:inherit}
+    .container{width:min(1080px,92%);margin:auto}
+
+    header{
+      position:sticky;top:0;z-index:30;
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid rgba(219,219,219,.85);
+    }
+    .nav{
+      min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:850;letter-spacing:-.5px}
+    .brand-mark{
+      width:36px;height:36px;border-radius:11px;
+      display:grid;place-items:center;color:#fff;
+      background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+      box-shadow:0 5px 14px rgba(253,29,29,.18);
+    }
+    .nav-links{display:flex;gap:22px;color:#555;font-size:14px}
+    .nav-links a:hover{color:#000}
+
+    .hero{
+      padding:72px 0 38px;
+      text-align:center;
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:7px;
+      border:1px solid var(--border);background:#fff;
+      border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;color:#555;
+      box-shadow:0 2px 10px rgba(0,0,0,.03);
+    }
+    h1{
+      max-width:780px;margin:18px auto 14px;
+      font-size:clamp(38px,7vw,68px);line-height:.98;letter-spacing:-3px;
+    }
+    h1 .grad{
+      background:linear-gradient(90deg,#833ab4,#fd1d1d,#fcb045);
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .sub{
+      max-width:710px;margin:0 auto;color:var(--muted);
+      font-size:clamp(16px,2.3vw,19px);line-height:1.65;
     }
 
-    .container {
-      width: 92%;
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 20px;
+    .tool{
+      margin:34px auto 0;
+      width:min(820px,100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      padding:18px;border-radius:22px;box-shadow:var(--shadow);
+      text-align:left;
+    }
+    .input-row{display:flex;gap:10px}
+    .url-wrap{
+      flex:1;display:flex;align-items:center;gap:10px;
+      border:1px solid var(--border);border-radius:14px;padding:0 14px;background:#fff;
+    }
+    .url-wrap:focus-within{border-color:#a8a8a8;box-shadow:0 0 0 3px rgba(0,149,246,.08)}
+    .url-wrap svg{flex:0 0 auto;color:#999}
+    #tweetUrl{
+      width:100%;height:54px;border:0;outline:0;background:transparent;color:#111;
+    }
+    #tweetUrl::placeholder{color:#aaa}
+    .download-btn{
+      border:0;border-radius:14px;padding:0 23px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      cursor:pointer;min-height:54px;white-space:nowrap;
+      box-shadow:0 6px 16px rgba(0,149,246,.2);
+    }
+    .download-btn:hover{filter:brightness(.96)}
+    .download-btn:disabled{opacity:.6;cursor:not-allowed}
+    .tool-hint{font-size:12px;color:#888;margin:11px 3px 0;line-height:1.5}
+
+    .status{
+      display:none;margin-top:15px;border-radius:14px;padding:13px 14px;font-size:14px;
+      background:#f7f7f7;border:1px solid #e7e7e7;
+    }
+    .status.show{display:block}
+    .status.error{background:#fff5f5;border-color:#ffd6d9;color:#a3202a}
+    .status.ok{background:#f0fff5;border-color:#c8f1d4;color:#176b35}
+
+    .result{
+      display:none;margin-top:18px;border-top:1px solid #eee;padding-top:18px;
+    }
+    .result.show{display:block}
+    .media-card{
+      display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:center;
+    }
+    .thumb{
+      aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:#111;
+      display:grid;place-items:center;color:#fff;position:relative;
+    }
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .play{
+      position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.65);
+      display:grid;place-items:center;backdrop-filter:blur(4px);
+    }
+    .meta h3{margin:0 0 6px;font-size:17px}
+    .meta p{margin:0;color:#888;font-size:13px}
+    .qualities{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+    .qbtn{
+      display:inline-flex;align-items:center;gap:7px;
+      border:1px solid var(--border);background:#fff;border-radius:10px;padding:9px 12px;
+      font-size:13px;font-weight:750;cursor:pointer;
+    }
+    .qbtn:hover{background:#f7f7f7}
+    .qbtn.primary{background:#111;color:#fff;border-color:#111}
+
+    section{padding:58px 0}
+    .section-title{text-align:center;margin-bottom:28px}
+    .section-title h2{font-size:clamp(28px,4vw,40px);letter-spacing:-1.5px;margin:0 0 10px}
+    .section-title p{color:var(--muted);margin:0}
+
+    .steps,.features{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+    }
+    .card{
+      background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+      padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.035);
+    }
+    .num{
+      width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+      background:#111;color:#fff;font-weight:800;margin-bottom:17px;
+    }
+    .card h3{margin:0 0 8px;font-size:18px}
+    .card p{margin:0;color:var(--muted);line-height:1.6;font-size:14px}
+
+    .feature-icon{
+      width:43px;height:43px;border-radius:13px;background:#f3f3f3;
+      display:grid;place-items:center;margin-bottom:15px;font-size:20px;
     }
 
-    header {
-      background: #fff;
-      border-bottom: 1px solid #ddd;
-      padding: 18px 0;
+    .faq{width:min(850px,100%);margin:auto;display:grid;gap:10px}
+    details{
+      background:#fff;border:1px solid var(--border);border-radius:14px;padding:0 18px;
     }
-
-    .logo {
-      text-align: center;
-      font-size: 26px;
-      font-weight: bold;
+    summary{
+      cursor:pointer;list-style:none;padding:18px 0;font-weight:750;
+      display:flex;justify-content:space-between;gap:20px;
     }
+    summary::-webkit-details-marker{display:none}
+    details p{margin:0;padding:0 0 18px;color:var(--muted);line-height:1.65;font-size:14px}
+    .plus{font-size:20px;font-weight:400;color:#999}
 
-    .hero {
-      padding: 60px 0;
-      text-align: center;
+    .seo-copy{
+      background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;
+      color:#666;line-height:1.75;font-size:14px;
     }
+    .seo-copy h2,.seo-copy h3{color:#111}
 
-    h1 {
-      font-size: 38px;
-      margin-bottom: 15px;
+    footer{
+      border-top:1px solid var(--border);margin-top:30px;background:#fff;
+      padding:30px 0;color:#777;font-size:13px;
     }
+    .footer-row{display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap}
+    .footer-links{display:flex;gap:18px;flex-wrap:wrap}
 
-    .subtitle {
-      color: #666;
-      font-size: 17px;
-      margin-bottom: 30px;
-      line-height: 1.6;
+
+    .trust-note{
+      margin:14px 3px 0;padding:12px 14px;border:1px solid #e5e5e5;border-radius:13px;
+      background:#fbfbfb;color:#666;font-size:12.5px;line-height:1.6
     }
-
-    .download-box {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    .trust-note strong{color:#222}
+    .content-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}
+    .content-card{
+      background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;
+      box-shadow:0 4px 20px rgba(0,0,0,.035)
     }
-
-    input {
-      width: 100%;
-      padding: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-      outline: none;
+    .content-card h2,.content-card h3{margin-top:0;color:#111}
+    .content-card p,.content-card li{color:#666;line-height:1.75;font-size:14px}
+    .content-card ul{padding-left:20px}
+    .policy-links{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .policy-link{
+      display:block;background:#fff;border:1px solid var(--border);border-radius:14px;
+      padding:18px;font-weight:800
     }
-
-    input:focus {
-      border-color: #333;
+    .policy-link span{display:block;color:#777;font-size:12px;font-weight:500;margin-top:5px;line-height:1.45}
+    .legal-section{scroll-margin-top:88px}
+    .legal-box{
+      background:#fff;border:1px solid var(--border);border-radius:18px;padding:28px;
+      color:#666;line-height:1.75;font-size:14px
     }
+    .legal-box h2,.legal-box h3{color:#111}
+    .legal-box h2{margin-top:0}
+    .contact-box a{color:#0877cc;text-decoration:underline}
+    .smallprint{font-size:12px;color:#888}
 
-    button {
-      width: 100%;
-      margin-top: 12px;
-      padding: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #111;
-      color: white;
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    #status {
-      margin-top: 18px;
-      font-size: 15px;
-      font-weight: bold;
-      word-break: break-word;
-    }
-
-    .info {
-      margin-top: 45px;
-      background: white;
-      border-radius: 12px;
-      padding: 25px;
-      text-align: left;
-    }
-
-    .info h2 {
-      margin-bottom: 15px;
-    }
-
-    .info p {
-      color: #555;
-      line-height: 1.7;
-      margin-bottom: 10px;
-    }
-
-    footer {
-      text-align: center;
-      padding: 25px;
-      color: #777;
-      font-size: 14px;
-    }
-
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 30px;
-      }
-
-      .hero {
-        padding: 40px 0;
-      }
+    @media(max-width:760px){
+      .nav-links{display:none}
+      .hero{padding-top:48px}
+      h1{letter-spacing:-2px}
+      .tool{padding:13px;border-radius:18px}
+      .input-row{flex-direction:column}
+      .download-btn{width:100%;height:52px}
+      .steps,.features,.content-grid,.policy-links{grid-template-columns:1fr}
+      .media-card{grid-template-columns:1fr}
+      .thumb{max-width:none}
+      section{padding:44px 0}
     }
   </style>
 </head>
 
 <body>
-
 <header>
-  <div class="logo">
-    X Video Downloader
+  <div class="container nav">
+    <a class="brand" href="#">
+      <span class="brand-mark">↓</span>
+      <span>TweetSave</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
+      <a href="#about">About</a>
+      <a href="#policies">Policies</a>
+    </nav>
   </div>
 </header>
 
-<section class="hero">
+<main>
+  <div class="container hero">
+    <span class="badge">● Free Twitter / X Media Downloader</span>
+    <h1>Download <span class="grad">Twitter / X</span><br>Videos & GIFs</h1>
+    <p class="sub">Paste any public X or Twitter post URL to download available videos and GIFs as MP4. Fast, clean and mobile-friendly.</p>
 
-  <div class="container">
+    <div class="tool">
+      <div class="input-row">
+        <div class="url-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M10.6 13.4a4 4 0 0 0 5.66 0l2.12-2.12a4 4 0 1 0-5.66-5.66l-1.21 1.21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M13.4 10.6a4 4 0 0 0-5.66 0l-2.12 2.12a4 4 0 1 0 5.66 5.66l1.21-1.21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="tweetUrl" type="url" autocomplete="off" placeholder="Paste x.com or twitter.com post link here..." />
+        </div>
+        <button class="download-btn" id="fetchBtn">Download</button>
+      </div>
 
-    <h1>Download X Videos</h1>
+      <div class="tool-hint">Example: https://x.com/username/status/1234567890 — only public posts are supported.</div>
+      <div class="trust-note"><strong>Use responsibly:</strong> Download only content you created, own, or have clear permission to save. Do not use this service to copy or redistribute copyrighted material without authorization.</div>
+      <div id="status" class="status"></div>
 
-    <p class="subtitle">
-      Paste a public X/Twitter post link below and download the video.
-    </p>
-
-    <div class="download-box">
-
-      <form id="downloadForm">
-
-        <input
-          type="url"
-          id="videoUrl"
-          name="url"
-          placeholder="Paste X post URL here..."
-          required
-        >
-
-        <button type="submit" id="downloadButton">
-          Download Video
-        </button>
-
-      </form>
-
-      <div id="status"></div>
-
+      <div id="result" class="result">
+        <div class="media-card">
+          <div class="thumb" id="thumb">
+            <div class="play">▶</div>
+          </div>
+          <div class="meta">
+            <h3 id="resultTitle">Media found</h3>
+            <p id="resultMeta">Choose a quality to download.</p>
+            <div class="qualities" id="qualities"></div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="info">
-
-      <h2>How to download</h2>
-
-      <p>1. Open a public post on X containing a video.</p>
-
-      <p>2. Copy the post link.</p>
-
-      <p>3. Paste the link into the box above.</p>
-
-      <p>4. Tap Download Video.</p>
-
-    </div>
-
   </div>
 
-</section>
+  <section id="how">
+    <div class="container">
+      <div class="section-title">
+        <h2>How to download</h2>
+        <p>Three simple steps. No account required.</p>
+      </div>
+      <div class="steps">
+        <div class="card">
+          <div class="num">1</div>
+          <h3>Copy the post link</h3>
+          <p>Open X/Twitter, choose a public post containing a video or GIF, and copy its link.</p>
+        </div>
+        <div class="card">
+          <div class="num">2</div>
+          <h3>Paste the URL</h3>
+          <p>Paste the X or Twitter post URL into the box at the top of this page.</p>
+        </div>
+        <div class="card">
+          <div class="num">3</div>
+          <h3>Choose quality</h3>
+          <p>Select an available MP4 quality and save the media to your device.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <div class="section-title">
+        <h2>Built for speed</h2>
+        <p>A simple downloader without unnecessary clutter.</p>
+      </div>
+      <div class="features">
+        <div class="card">
+          <div class="feature-icon">⚡</div>
+          <h3>Fast processing</h3>
+          <p>Optimized single-page interface that works smoothly on phones, tablets and desktops.</p>
+        </div>
+        <div class="card">
+          <div class="feature-icon">🎞</div>
+          <h3>Videos & GIFs</h3>
+          <p>Supports downloadable video media and animated GIF posts when your backend extractor returns them.</p>
+        </div>
+        <div class="card">
+          <div class="feature-icon">🔒</div>
+          <h3>No login required</h3>
+          <p>The interface does not ask users for an X/Twitter password. Public URLs are enough.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="container">
+      <div class="section-title">
+        <h2>Frequently asked questions</h2>
+        <p>Quick answers for common downloader questions.</p>
+      </div>
+
+      <div class="faq">
+        <details>
+          <summary>Can I download Twitter/X GIFs? <span class="plus">+</span></summary>
+          <p>Yes, if the post is public and your media extraction backend returns the GIF/video source. X commonly serves animated GIFs as video files, so they are often downloaded as MP4.</p>
+        </details>
+        <details>
+          <summary>Does it work on Android and iPhone? <span class="plus">+</span></summary>
+          <p>The website interface is fully responsive. Actual file-saving behavior can differ slightly between browsers and operating systems.</p>
+        </details>
+        <details>
+          <summary>Can private posts be downloaded? <span class="plus">+</span></summary>
+          <p>No. This page is intended for publicly accessible posts and media that you have permission to save.</p>
+        </details>
+        <details>
+          <summary>Why does the website need an API/backend? <span class="plus">+</span></summary>
+          <p>Browsers usually cannot directly extract X media because of platform restrictions, CORS and changing media URLs. A server-side extractor or authorized API is therefore needed for reliable downloads.</p>
+        </details>
+        <details>
+          <summary>Is TweetSave affiliated with X or Twitter? <span class="plus">+</span></summary>
+          <p>No. TweetSave is an independent utility and is not affiliated with, endorsed by, or sponsored by X Corp.</p>
+        </details>
+        <details>
+          <summary>Can I repost a downloaded video? <span class="plus">+</span></summary>
+          <p>Only if you own the content, have permission from the rights holder, or another legal basis allows you to reuse it. A public post does not automatically mean the media is copyright-free.</p>
+        </details>
+        <details>
+          <summary>Does TweetSave store my X password? <span class="plus">+</span></summary>
+          <p>No X password is requested by this interface. You should never enter your X password into the post URL field.</p>
+        </details>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="container">
+      <div class="content-grid">
+        <article class="content-card">
+          <h2>About TweetSave</h2>
+          <p>TweetSave is a browser-based utility designed to make it easier to save media from publicly accessible X/Twitter posts when you have the right to download that content. It does not require an X password and it does not provide access to private accounts.</p>
+          <p>The service is intended for practical uses such as saving your own uploads, keeping a personal copy of media you have permission to use, or downloading material released for reuse by its owner.</p>
+          <h3>What this tool can do</h3>
+          <ul>
+            <li>Process supported public X/Twitter post links.</li>
+            <li>Show available video qualities returned by the server.</li>
+            <li>Save supported video or GIF media as downloadable files.</li>
+            <li>Work from modern Android, iPhone, tablet and desktop browsers.</li>
+          </ul>
+        </article>
+        <aside class="content-card">
+          <h2>Before you download</h2>
+          <p>Publicly visible content is not automatically free to reuse. Copyright may still belong to the original creator or another rights holder.</p>
+          <ul>
+            <li>Prefer your own content.</li>
+            <li>Get permission when needed.</li>
+            <li>Do not bypass private-account restrictions.</li>
+            <li>Do not republish copyrighted media without authorization.</li>
+          </ul>
+          <p class="smallprint">TweetSave is not affiliated with, endorsed by, or sponsored by X Corp.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="seo-copy">
+        <h2>How to save an X/Twitter video on your phone or computer</h2>
+        <p>Open the public post containing the media you are allowed to save, use the Share option in X to copy the post link, paste that URL into TweetSave, and choose one of the available video qualities. On Android and desktop browsers, the file normally appears in the Downloads folder. On iPhone, the browser may first place the file in Files, where it can be saved or shared further.</p>
+        <h3>Why a download may fail</h3>
+        <p>A post may be private, deleted, age-restricted, region-restricted, temporarily unavailable, or X may have changed how the media is delivered. A failed request does not necessarily mean there is a problem with your phone. Try a different public post you are authorized to save and make sure the copied link contains <strong>/status/</strong>.</p>
+        <h3>Video and GIF formats</h3>
+        <p>X often delivers animated GIF posts as video streams, so a GIF may be offered as an MP4 file. Available resolution depends on the source post and on the formats X makes available for that media.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="policies">
+    <div class="container">
+      <div class="section-title">
+        <h2>Policies & site information</h2>
+        <p>Clear information about privacy, copyright and use of this service.</p>
+      </div>
+      <div class="policy-links">
+        <a class="policy-link" href="#privacy">Privacy Policy<span>What information the site may process.</span></a>
+        <a class="policy-link" href="#terms">Terms of Use<span>Rules for responsible use of the downloader.</span></a>
+        <a class="policy-link" href="#copyright">Copyright & DMCA<span>Rights-holder information and removal requests.</span></a>
+        <a class="policy-link" href="#contact">Contact<span>How to contact the site operator.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" class="legal-section">
+    <div class="container"><div class="legal-box">
+      <h2>Privacy Policy</h2>
+      <p>TweetSave is designed to process the X/Twitter post URL that you submit so the server can identify available media. Do not submit private information in the URL field.</p>
+      <p>Like most websites, the hosting provider may automatically record basic technical data such as IP address, browser type, device type, request time and error logs for security, reliability and abuse prevention. If advertising or analytics services are added, those providers may use cookies or similar technologies according to their own policies and applicable consent requirements.</p>
+      <p>TweetSave does not ask for your X/Twitter password. This policy should be updated if the site owner later adds analytics, advertising, accounts, contact forms or other data-collection features.</p>
+    </div></div>
+  </section>
+
+  <section id="terms" class="legal-section">
+    <div class="container"><div class="legal-box">
+      <h2>Terms of Use</h2>
+      <p>By using TweetSave, you agree to use the service only for lawful purposes and only for media you own, created yourself, are authorized to download, or are otherwise legally permitted to save.</p>
+      <p>You must not use the service to infringe copyright, violate privacy, bypass access controls, obtain media from private accounts, or redistribute protected content without permission. You are responsible for checking the rights and permissions that apply to the media you download.</p>
+      <p>The service is provided on an “as available” basis. X/Twitter can change its platform at any time, so particular posts or formats may stop working temporarily or permanently.</p>
+    </div></div>
+  </section>
+
+  <section id="copyright" class="legal-section">
+    <div class="container"><div class="legal-box">
+      <h2>Copyright & DMCA</h2>
+      <p>TweetSave does not claim ownership of media made available by third-party X/Twitter users. Copyright remains with the applicable creator or rights holder.</p>
+      <p>If you are a rights holder and believe this site is being used in connection with unauthorized copies of your work, contact the site operator with the relevant post URL, identification of the copyrighted work, your contact details and a clear explanation of the issue. The operator can review the request and take appropriate action relating to this service.</p>
+      <p>Do not submit false or misleading copyright complaints.</p>
+    </div></div>
+  </section>
+
+  <section id="contact" class="legal-section">
+    <div class="container"><div class="legal-box contact-box">
+      <h2>Contact</h2>
+      <p>For support, copyright concerns, privacy questions or site feedback, add your public support email address here before publishing:</p>
+      <p><strong>Email:</strong> your-email@example.com</p>
+      <p class="smallprint">Replace the placeholder email with an address you actively monitor before applying for AdSense.</p>
+    </div></div>
+  </section>
+</main>
 
 <footer>
-  X Video Downloader
+  <div class="container footer-row">
+    <div>© <span id="year"></span> TweetSave. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#terms">Terms</a>
+      <a href="#copyright">Copyright</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
 </footer>
 
-
 <script>
+  // ==============================
+  // CONFIG
+  // ==============================
+  // Connect your own server/API here.
+  // Expected POST response example:
+  // {
+  //   "title": "Post by @username",
+  //   "thumbnail": "https://...",
+  //   "media": [
+  //      {"quality":"HD 1080p","url":"https://...mp4","ext":"MP4"},
+  //      {"quality":"720p","url":"https://...mp4","ext":"MP4"}
+  //   ]
+  // }
+  const API_ENDPOINT = "/api/twitter";
 
-const form = document.getElementById("downloadForm");
-const button = document.getElementById("downloadButton");
-const statusBox = document.getElementById("status");
+  const urlInput = document.getElementById("tweetUrl");
+  const fetchBtn = document.getElementById("fetchBtn");
+  const statusBox = document.getElementById("status");
+  const resultBox = document.getElementById("result");
+  const thumb = document.getElementById("thumb");
+  const titleEl = document.getElementById("resultTitle");
+  const metaEl = document.getElementById("resultMeta");
+  const qualities = document.getElementById("qualities");
 
+  document.getElementById("year").textContent = new Date().getFullYear();
 
-form.addEventListener("submit", async function(event) {
-
-  event.preventDefault();
-
-  const videoUrl =
-    document.getElementById("videoUrl").value.trim();
-
-
-  if (!videoUrl) {
-
-    statusBox.innerText =
-      "Please paste an X video URL.";
-
-    return;
+  function setStatus(message, type="") {
+    statusBox.className = "status show" + (type ? " " + type : "");
+    statusBox.textContent = message;
   }
 
+  function clearStatus() {
+    statusBox.className = "status";
+    statusBox.textContent = "";
+  }
 
-  button.disabled = true;
-  button.innerText = "Processing...";
+  function validXUrl(value) {
+    try {
+      const u = new URL(value.trim());
+      const host = u.hostname.replace(/^www\./,"").toLowerCase();
+      return (host === "x.com" || host === "twitter.com" || host === "mobile.twitter.com") &&
+             /\/status\/\d+/.test(u.pathname);
+    } catch {
+      return false;
+    }
+  }
 
-  statusBox.innerText =
-    "Preparing video...";
+  function renderResult(data) {
+    qualities.innerHTML = "";
+    thumb.innerHTML = '<div class="play">▶</div>';
 
+    if (data.thumbnail) {
+      const img = document.createElement("img");
+      img.src = data.thumbnail;
+      img.alt = "Media thumbnail";
+      thumb.prepend(img);
+    }
 
-  try {
+    titleEl.textContent = data.title || "Media found";
+    const items = Array.isArray(data.media) ? data.media : [];
+    metaEl.textContent = items.length ? `${items.length} download option${items.length > 1 ? "s" : ""} available.` : "No downloadable variants were returned.";
 
-    /*
-       IMPORTANT:
-       Sending data as normal HTML form data.
-
-       Flask backend can read this using:
-
-       request.form.get("url")
-    */
-
-    const formData = new URLSearchParams();
-
-    formData.append("url", videoUrl);
-
-
-    const response = await fetch("/download", {
-
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/x-www-form-urlencoded"
-      },
-
-      body: formData.toString()
-
+    items.forEach((item, i) => {
+      const a = document.createElement("a");
+      a.className = "qbtn" + (i === 0 ? " primary" : "");
+      const ext = (item.ext || "MP4").toLowerCase();
+      const quality = (item.quality || "video").replace(/[^a-zA-Z0-9_-]/g, "");
+      const filename = `twitter-${quality || "video"}.${ext}`;
+      a.href = `/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(filename)}`;
+      a.textContent = `${item.quality || "Download"} ${item.ext ? "• " + item.ext : ""}`;
+      qualities.appendChild(a);
     });
 
-
-    if (!response.ok) {
-
-      let errorMessage =
-        "Unable to download this video.";
-
-      try {
-
-        const data = await response.json();
-
-        errorMessage =
-          data.error ||
-          data.message ||
-          errorMessage;
-
-      } catch (e) {
-
-        try {
-
-          const text =
-            await response.text();
-
-          if (text) {
-            errorMessage = text;
-          }
-
-        } catch (e) {}
-
-      }
-
-      throw new Error(errorMessage);
-
-    }
-
-
-    const contentType =
-      response.headers.get("content-type") || "";
-
-
-    /*
-      CASE 1:
-      Backend returns JSON download URL
-    */
-
-    if (
-      contentType.includes(
-        "application/json"
-      )
-    ) {
-
-      const data =
-        await response.json();
-
-
-      const downloadUrl =
-        data.download_url ||
-        data.url ||
-        data.video_url;
-
-
-      if (downloadUrl) {
-
-        statusBox.innerText =
-          "Download starting...";
-
-        window.location.href =
-          downloadUrl;
-
-        return;
-
-      }
-
-
-      if (data.error) {
-
-        throw new Error(
-          data.error
-        );
-
-      }
-
-
-      throw new Error(
-        "Video download link not found."
-      );
-
-    }
-
-
-    /*
-      CASE 2:
-      Backend directly sends MP4/file
-    */
-
-    const blob =
-      await response.blob();
-
-
-    if (!blob.size) {
-
-      throw new Error(
-        "Empty video file received."
-      );
-
-    }
-
-
-    const fileUrl =
-      URL.createObjectURL(blob);
-
-
-    const link =
-      document.createElement("a");
-
-
-    link.href =
-      fileUrl;
-
-
-    link.download =
-      "x-video.mp4";
-
-
-    document.body.appendChild(
-      link
-    );
-
-
-    link.click();
-
-
-    link.remove();
-
-
-    setTimeout(function() {
-
-      URL.revokeObjectURL(
-        fileUrl
-      );
-
-    }, 5000);
-
-
-    statusBox.innerText =
-      "Download started.";
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    statusBox.innerText =
-      error.message ||
-      "Unable to download this video.";
-
+    resultBox.classList.add("show");
   }
 
+  fetchBtn.addEventListener("click", async () => {
+    const url = urlInput.value.trim();
+    resultBox.classList.remove("show");
+    clearStatus();
 
-  button.disabled = false;
+    if (!url) {
+      setStatus("Please paste a Twitter/X post URL first.", "error");
+      urlInput.focus();
+      return;
+    }
 
-  button.innerText =
-    "Download Video";
+    if (!validXUrl(url)) {
+      setStatus("Please enter a valid public x.com or twitter.com post URL.", "error");
+      return;
+    }
 
-});
+    if (!API_ENDPOINT) {
+      setStatus("Frontend is ready. Add your media extraction API URL in the API_ENDPOINT variable to enable real downloads.", "error");
+      return;
+    }
 
+    try {
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = "Processing…";
+      setStatus("Finding downloadable media…");
+
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ url })
+      });
+
+      if (!response.ok) throw new Error("API request failed");
+      const data = await response.json();
+
+      if (!data || !Array.isArray(data.media) || !data.media.length) {
+        throw new Error("No downloadable media found");
+      }
+
+      renderResult(data);
+      setStatus("Media found successfully.", "ok");
+    } catch (err) {
+      setStatus(err.message || "Could not process this post. Please try another public URL.", "error");
+    } finally {
+      fetchBtn.disabled = false;
+      fetchBtn.textContent = "Download";
+    }
+  });
+
+  urlInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") fetchBtn.click();
+  });
 </script>
-
 </body>
 </html>
