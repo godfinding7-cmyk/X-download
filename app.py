@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from urllib.parse import urlparse
 import yt_dlp
+import requests
 import os
 
 app = Flask(__name__, static_folder='static', static_url_path='')
@@ -17,6 +18,73 @@ def valid_x_url(value: str) -> bool:
 @app.get('/')
 def home():
     return send_from_directory(app.static_folder, 'index.html')
+
+
+@app.get('/download')
+def download_media():
+    media_url = str(request.args.get('url', '')).strip()
+    filename = str(request.args.get('filename', 'twitter-video.mp4')).strip()
+
+    try:
+        parsed = urlparse(media_url)
+        host = (parsed.hostname or '').lower()
+
+        # Only allow X/Twitter CDN media URLs.
+        if parsed.scheme != 'https' or not (host == 'twimg.com' or host.endswith('.twimg.com')):
+            return jsonify(error='Invalid media URL.'), 400
+
+        safe_name = ''.join(c for c in filename if c.isalnum() or c in '._- ')[:100].strip()
+        if not safe_name:
+            safe_name = 'twitter-video.mp4'
+        if '.' not in safe_name:
+            safe_name += '.mp4'
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126 Safari/537.36',
+            'Referer': 'https://x.com/'
+        }
+
+        upstream = requests.get(
+            media_url,
+            headers=headers,
+            stream=True,
+            timeout=(10, 120),
+            allow_redirects=True
+        )
+        upstream.raise_for_status()
+
+        content_type = upstream.headers.get('Content-Type', 'video/mp4')
+
+        def generate():
+            try:
+                for chunk in upstream.iter_content(chunk_size=1024 * 256):
+                    if chunk:
+                        yield chunk
+            finally:
+                upstream.close()
+
+        response_headers = {
+            'Content-Disposition': f'attachment; filename="{safe_name}"',
+            'Cache-Control': 'private, max-age=0',
+            'X-Content-Type-Options': 'nosniff'
+        }
+
+        content_length = upstream.headers.get('Content-Length')
+        if content_length:
+            response_headers['Content-Length'] = content_length
+
+        return Response(
+            stream_with_context(generate()),
+            status=200,
+            headers=response_headers,
+            content_type=content_type
+        )
+
+    except requests.RequestException:
+        return jsonify(error='Could not download this media file.'), 502
+    except Exception:
+        return jsonify(error='Download failed.'), 500
+
 
 @app.post('/api/twitter')
 def twitter_media():
